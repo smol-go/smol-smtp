@@ -42,7 +42,17 @@ func connectToMongoDB() {
 }
 
 func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello World!")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func getAllEmailsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
 }
 
 func isValidEmail(email string) bool {
@@ -84,6 +94,7 @@ func main() {
 	}()
 
 	http.HandleFunc("/send-email", sendEmailHandler)
+	http.HandleFunc("/get-all-emails", getAllEmailsHandler)
 
 	log.Println("Server starting on port 8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
