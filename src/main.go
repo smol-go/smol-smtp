@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -52,6 +54,28 @@ func getAllEmailsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
 		return
+	}
+
+	collection := client.Database(os.Getenv("DATABASE_NAME")).Collection("emails")
+
+	cursor, err := collection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	var emails []bson.M
+	if err = cursor.All(context.TODO(), &emails); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(emails); err != nil {
+		log.Printf("Error encoding emails to JSON: %v", err)
 	}
 }
 
