@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type emailConfig struct {
@@ -19,6 +23,22 @@ type emailRequest struct {
 	Subject    string   `json:"subject"`
 	Message    string   `json:"message"`
 	Recipients []string `json:"recipients"`
+}
+
+var client *mongo.Client
+
+func connectToMongoDB() {
+	var err error
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	client, err = mongo.Connect(context.TODO(), clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Connected to MongoDB!")
 }
 
 func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,6 +76,13 @@ func getEmailConfig() (emailConfig, error) {
 }
 
 func main() {
+	connectToMongoDB()
+	defer func() {
+		if err := client.Disconnect(context.TODO()); err != nil {
+			log.Fatalf("Error disconnecting from MongoDB: %s", err)
+		}
+	}()
+
 	http.HandleFunc("/send-email", sendEmailHandler)
 
 	log.Println("Server starting on port 8080...")
