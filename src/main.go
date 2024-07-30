@@ -15,6 +15,12 @@ type emailConfig struct {
 	smtpPort    string
 }
 
+type emailRequest struct {
+	Subject    string   `json:"subject"`
+	Message    string   `json:"message"`
+	Recipients []string `json:"recipients"`
+}
+
 func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello World!")
 }
